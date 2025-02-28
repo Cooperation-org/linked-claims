@@ -58,13 +58,6 @@ interface ClaimDetail {
   credentialSubject: CredentialSubject
 }
 
-interface DriveFile {
-  id: string
-  name: string
-  webViewLink: string
-  mimeType: string
-}
-
 interface ComprehensiveClaimDetailsProps {
   onAchievementLoad?: (achievementName: string) => void
 }
@@ -88,45 +81,14 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
   const [comments, setComments] = useState<ClaimDetail[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [publicFiles, setPublicFiles] = useState<DriveFile[]>([])
-  const [error, setError] = useState<string | null>(null)
   const theme = useTheme()
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('sm'))
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const accessToken = session?.accessToken
   const isAskForRecommendation = pathname?.includes('/askforrecommendation')
   const isView = pathname?.includes('/view')
   const { getContent } = useGoogleDrive()
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({})
-
-  const getPublicFile = async (id: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Direct access to public files without authentication
-      const response = await axios.get(`https://drive.google.com/uc?export=view&id=${id}`)
-
-      // This will only work if the file is publicly accessible
-      // For files with "Anyone with the link" sharing settings
-      const fileData: DriveFile = {
-        id,
-        name: `File ID: ${id}`,
-        webViewLink: `https://drive.google.com/file/d/${id}/view`,
-        mimeType: response.headers['content-type']
-      }
-
-      setPublicFiles(prev => [...prev, fileData])
-      return response.data
-    } catch (err) {
-      setError('Unable to access this file. It may not be public or may not exist.')
-      console.error('Error fetching public file:', err)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     if (!fileID) {
@@ -138,71 +100,15 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
       return
     }
 
-    // const fetchDriveData = async () => {
-    //   try {
-    //     // Get the main file using the public method
-    //     const vcData = await getPublicFile(fileID)
-    //     console.log('cvdata', vcData)
-    //     if (vcData) {
-    //       // Parse the data if it's in string format
-    //       const parsedData = typeof vcData === 'string' ? JSON.parse(vcData) : vcData
-    //       setClaimDetail(parsedData as ClaimDetail)
-    //     }
-
-    //     // If we're in view mode, get recommendations
-    //     const type = window.location.pathname.includes('view')
-    //     if (type) {
-    //       try {
-    //         // For demo purposes, we might need to modify this approach
-    //         // since we're now using direct public links
-    //         const dummyRelationsId = `${fileID}_relations`
-    //         const relationsData = await getPublicFile(dummyRelationsId)
-
-    //         const parsedRelations =
-    //           typeof relationsData === 'string'
-    //             ? JSON.parse(relationsData)
-    //             : relationsData
-
-    //         const recommendationIds = parsedRelations?.recommendations || []
-
-    //         // Fetch each recommendation
-    //         const recommendations = await Promise.all(
-    //           recommendationIds.map(async (rec: string) => {
-    //             try {
-    //               const recData = await getPublicFile(rec)
-    //               return typeof recData === 'string' ? JSON.parse(recData) : recData
-    //             } catch (recError) {
-    //               console.error('Error fetching recommendation:', recError)
-    //               return null
-    //             }
-    //           })
-    //         )
-
-    //         // Filter out any failed fetches
-    //         const validRecommendations = recommendations.filter(rec => rec !== null)
-    //         console.log('validRecommendations', validRecommendations)
-    //         if (validRecommendations.length > 0) {
-    //           setComments(validRecommendations as ClaimDetail[])
-    //         }
-    //       } catch (relationsError) {
-    //         console.error('Error fetching relations:', relationsError)
-    //         // Continue without recommendations if this fails
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('Error fetching claim details:', error)
-    //     setErrorMessage('Failed to fetch claim details.')
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-
-    // fetchDriveData()
-
     const fetching = async () => {
-      const content = await getContent(fileID)
-      setClaimDetail(content.data)
-      setLoading(false)
+      try {
+        const content = await getContent(fileID)
+        setClaimDetail(content.data)
+        setLoading(false)
+      } catch (e) {
+        setErrorMessage('Failed to fetch claim details.')
+        setLoading(false)
+      }
     }
     fetching()
   }, [fileID, status])
