@@ -25,7 +25,7 @@ import useGoogleDrive from '../../hooks/useGoogleDrive'
 import { ExpandLess, ExpandMore } from '@mui/icons-material'
 import { GoogleDriveStorage } from '@cooperation/vc-storage'
 import EvidencePreview from './EvidencePreview'
-import { getAccessToken, getFileViaFirebase } from '../../firebase/storage'
+import axios from 'axios'
 // Define types
 interface Portfolio {
   name: string
@@ -57,6 +57,7 @@ interface ClaimDetail {
   expirationDate: string
   credentialSubject: CredentialSubject
 }
+
 interface ComprehensiveClaimDetailsProps {
   onAchievementLoad?: (achievementName: string) => void
 }
@@ -84,11 +85,11 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('sm'))
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const accessToken = session?.accessToken
   const isAskForRecommendation = pathname?.includes('/askforrecommendation')
   const isView = pathname?.includes('/view')
-  const {} = useGoogleDrive()
+  const { getContent } = useGoogleDrive()
   const [expandedComments, setExpandedComments] = useState<{ [key: string]: boolean }>({})
+
   useEffect(() => {
     if (!fileID) {
       setErrorMessage('Invalid claim ID.')
@@ -98,58 +99,19 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
     if (status === 'loading') {
       return
     }
-    if (status === 'unauthenticated') {
-      setLoading(false)
-      return
-    }
-    if (!accessToken) {
-      setErrorMessage('You need to log in to view this content.')
-      setLoading(false)
-      return
-    }
-    const fetchDriveData = async () => {
+
+    const fetching = async () => {
       try {
-        const accessToken1 = await getAccessToken(fileID)
-        const uncachedStorage = new GoogleDriveStorage(accessToken1)
-        let vcData = await getFileViaFirebase(fileID)
-        vcData = JSON.parse(vcData.body)
-
-        if (vcData) {
-          setClaimDetail(vcData as unknown as ClaimDetail)
-        }
-
-        const type = window.location.pathname.includes('view')
-        if (type) {
-          const vcFolderId = await uncachedStorage.getFileParents(fileID)
-          const files = await uncachedStorage.findFilesUnderFolder(vcFolderId)
-          const relationsFile = files.find((f: any) => f.name === 'RELATIONS')
-
-          const relationsContent = await uncachedStorage.retrieve(relationsFile.id)
-          const relationsData = relationsContent?.data.body
-            ? JSON.parse(relationsContent?.data.body)
-            : relationsContent?.data
-
-          const recommendationIds = relationsData.recommendations || []
-          const recommendations = await Promise.all(
-            recommendationIds.map(async (rec: string) => {
-              const recFile = await getFileViaFirebase(rec)
-              return JSON.parse(recFile.body)
-            })
-          )
-          if (recommendations) {
-            setComments(recommendations as any)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching claim details:', error)
+        const content = await getContent(fileID)
+        setClaimDetail(content.data)
+        setLoading(false)
+      } catch (e) {
         setErrorMessage('Failed to fetch claim details.')
-      } finally {
         setLoading(false)
       }
     }
-
-    fetchDriveData()
-  }, [accessToken, fileID, status])
+    fetching()
+  }, [fileID, status])
 
   const handleToggleComment = (commentId: string) => {
     setExpandedComments(prevState => ({
@@ -157,6 +119,7 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
       [commentId]: !prevState[commentId]
     }))
   }
+
   if (status === 'loading' || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -172,6 +135,7 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
       </Typography>
     )
   }
+
   setTimeout(() => {
     if (!claimDetail) {
       return (
@@ -181,10 +145,12 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
       )
     }
   }, 2000)
+
   const credentialSubject = claimDetail?.credentialSubject
   const achievement = credentialSubject?.achievement && credentialSubject.achievement[0]
   const hasValidEvidence =
     credentialSubject?.portfolio && credentialSubject?.portfolio.length > 0
+
   return (
     <Container sx={{ maxWidth: '800px' }}>
       {claimDetail && (
