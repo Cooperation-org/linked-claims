@@ -148,6 +148,11 @@ const ClaimsPage: React.FC = () => {
   }
 
   const handleLinkedTrustShare = (claim: any) => {
+    claim = {
+      ...claim,
+      id: claim.id.id
+    }
+
     fetch('https://dev.linkedtrust.us/api/credential', {
       method: 'POST',
       headers: {
