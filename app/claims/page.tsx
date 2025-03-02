@@ -161,14 +161,17 @@ const ClaimsPage: React.FC = () => {
       body: JSON.stringify(claim)
     })
       .then(response => {
+        if (response.status === 409) {
+          throw new Error('Credential already exists in LinkedTrust')
+        }
         if (!response.ok) {
-          throw new Error('Network response was not ok')
+          throw new Error('Failed to share with LinkedTrust')
         }
         showNotification('Successfully shared with LinkedTrust', 'success')
       })
       .catch(error => {
         console.error('Error sharing with LinkedTrust:', error)
-        showNotification('Failed to share with LinkedTrust', 'error')
+        showNotification(error.message || 'Failed to share with LinkedTrust', 'error')
       })
   }
 
