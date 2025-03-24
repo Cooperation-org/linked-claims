@@ -1,15 +1,17 @@
 import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '../auth/[...nextauth]/options'
 import axios from 'axios'
 import jwt from 'jsonwebtoken'
+
+export const dynamic = 'force-dynamic'
 
 const secret = process.env.LINKEDTRUST_SECRET as string
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-
+    console.log('session', session)
     if (!session?.user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }

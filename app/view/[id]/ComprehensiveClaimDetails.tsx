@@ -111,7 +111,7 @@ const ComprehensiveClaimDetails: React.FC<ComprehensiveClaimDetailsProps> = ({
       }
     }
     fetching()
-  }, [fileID, status])
+  }, [fileID, getContent, status])
 
   const handleToggleComment = (commentId: string) => {
     setExpandedComments(prevState => ({
