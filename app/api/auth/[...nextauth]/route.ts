@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth'
+import NextAuth, { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import { setCookie } from '../../../utils/cookie'
 import { storeFileTokens } from '../../../firebase/storage'
@@ -14,6 +14,7 @@ declare module 'next-auth' {
       name?: string
       email?: string
       image?: string
+      googleId?: string
     }
   }
 
@@ -26,11 +27,12 @@ declare module 'next-auth' {
       name?: string
       email?: string
       image?: string
+      googleId?: string
     }
   }
 }
 
-const handler = NextAuth({
+const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '',
@@ -46,7 +48,7 @@ const handler = NextAuth({
     })
   ],
   callbacks: {
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user }: { token: any; account: any; user: any }) {
       // Initial sign-in
       if (account && user) {
         const accessToken = account.access_token
@@ -62,13 +64,13 @@ const handler = NextAuth({
           user: {
             name: user.name,
             email: user.email,
-            image: user.image
+            image: user.image,
+            googleId: user.id
           }
         }
       }
 
       // Return previous token if the access token has not expired yet
-
       if (
         token.expires &&
         typeof token.expires === 'number' &&
@@ -103,6 +105,8 @@ const handler = NextAuth({
     maxAge: 60 * 60 * 24 * 7, // 2 days
     updateAge: 60 * 60 * 24 // 1 day
   }
-})
+} satisfies NextAuthOptions
 
-export { handler as GET, handler as POST }
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST, authOptions }

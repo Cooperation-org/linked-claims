@@ -147,7 +147,7 @@ const ClaimsPage: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }))
   }
 
-  const handleLinkedTrustShare = (claim: any) => {
+  const handleLinkedTrustShare = async (claim: any) => {
     claim = {
       ...claim,
       id: claim.id.id
@@ -160,7 +160,7 @@ const ClaimsPage: React.FC = () => {
       },
       body: JSON.stringify(claim)
     })
-      .then(response => {
+      .then(async response => {
         if (response.status === 409) {
           throw new Error('Credential already exists in LinkedTrust')
         }
@@ -168,6 +168,9 @@ const ClaimsPage: React.FC = () => {
           throw new Error('Failed to share with LinkedTrust')
         }
         showNotification('Successfully shared with LinkedTrust', 'success')
+        requestAnimationFrame(() => {
+          linkedtrustMagicLink()
+        })
       })
       .catch(error => {
         console.error('Error sharing with LinkedTrust:', error)
@@ -282,6 +285,22 @@ const ClaimsPage: React.FC = () => {
 
     return vcs
   }, [storage])
+
+  const linkedtrustMagicLink = async () => {
+    try {
+      const response = await fetch(`/api/linkdtrustauth`)
+      const { data } = await response.json()
+
+      if (data?.accessToken && data?.refreshToken) {
+        const authURL = `https://dev.linkedtrust.us/login?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`
+        window.open(authURL, '_blank')
+      } else {
+        console.error('Access token or refresh token is missing.')
+      }
+    } catch (error) {
+      console.error('Error fetching authentication data:', error)
+    }
+  }
 
   useEffect(() => {
     const fetchClaims = async () => {
