@@ -11,7 +11,6 @@ const secret = process.env.LINKEDTRUST_SECRET as string
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    console.log('session', session)
     if (!session?.user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
@@ -30,7 +29,10 @@ export async function GET() {
   } catch (err) {
     console.error('Error fetching session:', err)
     return NextResponse.json(
-      { message: 'Magic link authentication failed' },
+      {
+        message: `Magic link authentication failed: ${err}`,
+        status: 500
+      },
       { status: 500 }
     )
   }
