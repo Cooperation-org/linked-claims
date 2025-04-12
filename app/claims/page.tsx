@@ -43,6 +43,7 @@ import {
   SVGExport
 } from '../Assets/SVGs'
 import { getAccessToken, getFileViaFirebase } from '../firebase/storage'
+import { createLinkedTrustUtils } from '../utils/LinkedTrustUtils'
 
 // Types
 interface Claim {
@@ -146,37 +147,9 @@ const ClaimsPage: React.FC = () => {
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }))
   }
-
-  const handleLinkedTrustShare = async (claim: any) => {
-    claim = {
-      ...claim,
-      id: claim.id.id
-    }
-
-    fetch('https://dev.linkedtrust.us/api/credential', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(claim)
-    })
-      .then(async response => {
-        if (response.status === 409) {
-          throw new Error('Credential already exists in LinkedTrust')
-        }
-        if (!response.ok) {
-          throw new Error('Failed to share with LinkedTrust')
-        }
-        showNotification('Successfully shared with LinkedTrust', 'success')
-        requestAnimationFrame(() => {
-          linkedtrustMagicLink()
-        })
-      })
-      .catch(error => {
-        console.error('Error sharing with LinkedTrust:', error)
-        showNotification(error.message || 'Failed to share with LinkedTrust', 'error')
-      })
-  }
+  const { handleLinkedTrustShare } = createLinkedTrustUtils({
+    showNotification
+  })
 
   const handleEmailShare = (claim: any, e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -286,22 +259,6 @@ const ClaimsPage: React.FC = () => {
     return vcs
   }, [storage])
 
-  const linkedtrustMagicLink = async () => {
-    try {
-      const response = await fetch(`/api/linkdtrustauth`)
-      const { data } = await response.json()
-
-      if (data?.accessToken && data?.refreshToken) {
-        const authURL = `https://dev.linkedtrust.us/login?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`
-        window.open(authURL, '_blank')
-      } else {
-        console.error('Access token or refresh token is missing.')
-      }
-    } catch (error) {
-      console.error('Error fetching authentication data:', error)
-    }
-  }
-
   useEffect(() => {
     const fetchClaims = async () => {
       try {
@@ -400,7 +357,7 @@ const ClaimsPage: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {claims.map(claim => (
             <Paper
-              key={claim.id}
+              key={claim.id.id}
               onClick={() => handleCardClick(claim.id)}
               elevation={0}
               sx={{
