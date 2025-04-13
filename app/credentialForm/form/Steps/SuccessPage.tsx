@@ -26,6 +26,7 @@ import LoadingOverlay from '../../../components/Loading/LoadingOverlay'
 import { FormData } from '../../../credentialForm/form/types/Types'
 import { copyFormValuesToClipboard } from '../../../utils/formUtils'
 import { useStepContext } from '../StepContext'
+import { createLinkedTrustUtils } from '../../../utils/LinkedTrustUtils'
 
 interface SuccessPageProps {
   setActiveStep: (step: number) => void //NOSONAR
@@ -107,31 +108,18 @@ const SuccessPage: React.FC<SuccessPageProps> = ({
     return `${baseLinkedInUrl}?${params.toString()}`
   }
 
+  const { handleLinkedTrustShare } = createLinkedTrustUtils({
+    showNotification
+  })
+
   const handleShareOption = (
     option: 'LinkedIn' | 'Email' | 'CopyURL' | 'View' | 'LinkedTrust'
   ) => {
     const credentialLink = `https://linkedcreds.allskillscount.org/view/${fileId}`
     const credentialData = res
-
+    console.log(credentialData)
     if (option === 'LinkedTrust') {
-      fetch('https://dev.linkedtrust.us/api/credential', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(credentialData)
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok')
-          }
-          console.log('🚀 ~ handleShareOption ~ response:', response)
-          showNotification('Successfully shared with LinkedTrust', 'success')
-        })
-        .catch(error => {
-          console.error('Error sharing with LinkedTrust:', error)
-          showNotification('Failed to share with LinkedTrust', 'error')
-        })
+      handleLinkedTrustShare(credentialData)
       return
     }
 
