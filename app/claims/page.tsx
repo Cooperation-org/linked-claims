@@ -148,7 +148,8 @@ const ClaimsPage: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }))
   }
   const { handleLinkedTrustShare } = createLinkedTrustUtils({
-    showNotification
+    showNotification,
+    email: session?.user?.email ?? ''
   })
 
   const handleEmailShare = (claim: any, e?: React.MouseEvent) => {

@@ -27,6 +27,7 @@ import { FormData } from '../../../credentialForm/form/types/Types'
 import { copyFormValuesToClipboard } from '../../../utils/formUtils'
 import { useStepContext } from '../StepContext'
 import { createLinkedTrustUtils } from '../../../utils/LinkedTrustUtils'
+import { useSession } from 'next-auth/react'
 
 interface SuccessPageProps {
   setActiveStep: (step: number) => void //NOSONAR
@@ -55,6 +56,7 @@ const SuccessPage: React.FC<SuccessPageProps> = ({
   fileId,
   res
 }) => {
+  const { data: session } = useSession()
   const { setActiveStep } = useStepContext()
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
@@ -109,7 +111,8 @@ const SuccessPage: React.FC<SuccessPageProps> = ({
   }
 
   const { handleLinkedTrustShare } = createLinkedTrustUtils({
-    showNotification
+    showNotification,
+    email: session?.user?.email ?? ''
   })
 
   const handleShareOption = (

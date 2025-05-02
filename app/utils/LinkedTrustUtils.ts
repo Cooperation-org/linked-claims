@@ -1,14 +1,16 @@
 interface LinkedTrustUtilsOptions {
   showNotification: (message: string, severity: 'success' | 'error') => void
+  email: string
 }
 
 export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
-  const { showNotification } = options
+  const { showNotification, email } = options
 
   const handleLinkedTrustShare = async (claim: any) => {
     claim = {
       ...claim,
-      id: claim.id.id ? claim.id.id : claim.id
+      id: claim.id.id ? claim.id.id : claim.id,
+      email
     }
 
     try {
