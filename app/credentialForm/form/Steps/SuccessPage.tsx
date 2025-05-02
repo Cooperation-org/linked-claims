@@ -74,9 +74,14 @@ const SuccessPage: React.FC<SuccessPageProps> = ({
       setTooltipMessage('Signing your skill...')
       const timer1 = setTimeout(() => setTooltipMessage('Saving your skill...'), 3000)
       const timer2 = setTimeout(() => setTooltipMessage('Fetching link...'), 6000)
+      const timeoutTimer = setTimeout(() => {
+        showNotification('Please sign in to continue', 'error')
+        window.location.href = '/'
+      }, 30000)
       return () => {
         clearTimeout(timer1)
         clearTimeout(timer2)
+        clearTimeout(timeoutTimer)
       }
     } else {
       setTooltipMessage('Click to view')
@@ -428,11 +433,16 @@ const SuccessPage: React.FC<SuccessPageProps> = ({
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        sx={{ zIndex: 100000 }}
+        autoHideDuration={10000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ zIndex: 1300 }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
