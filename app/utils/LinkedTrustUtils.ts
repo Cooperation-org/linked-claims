@@ -3,6 +3,15 @@ interface LinkedTrustUtilsOptions {
   email: string
 }
 
+interface LinkedTrustResponse {
+  credential: any
+  uri: string
+  schema?: string
+  claimUrl: string
+  message?: string
+  instructions?: any
+}
+
 export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
   const { showNotification, email } = options
 
@@ -14,7 +23,8 @@ export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
     }
 
     try {
-      const response = await fetch('https://dev.linkedtrust.us/api/credential', {
+      const baseUrl = process.env.NEXT_PUBLIC_LINKEDTRUST_API_URL || 'https://linkedtrust.us'
+      const response = await fetch(`${baseUrl}/api/credentials`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -23,6 +33,15 @@ export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
       })
 
       if (response.status === 409) {
+        // Credential already exists - still get the response for the claimUrl
+        const data: LinkedTrustResponse = await response.json()
+        if (data.claimUrl) {
+          showNotification('Credential already exists. Opening claim page...', 'success')
+          setTimeout(() => {
+            window.open(data.claimUrl, '_blank')
+          }, 1000)
+          return
+        }
         throw new Error('Credential already exists in LinkedTrust')
       }
 
@@ -30,8 +49,20 @@ export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
         throw new Error('Failed to share with LinkedTrust')
       }
 
-      showNotification('Successfully shared with LinkedTrust', 'success')
-      linkedtrustMagicLink()
+      const data: LinkedTrustResponse = await response.json()
+      
+      if (data.claimUrl) {
+        showNotification('Successfully shared with LinkedTrust! Opening claim page...', 'success')
+        
+        // Open the claim URL in a new tab
+        setTimeout(() => {
+          window.open(data.claimUrl, '_blank')
+        }, 1000)
+      } else {
+        // Fallback to old magic link approach if no claimUrl
+        showNotification('Successfully shared with LinkedTrust', 'success')
+        linkedtrustMagicLink()
+      }
     } catch (error: any) {
       console.error('Error sharing with LinkedTrust:', error)
       showNotification(error.message || 'Failed to share with LinkedTrust', 'error')
@@ -44,7 +75,8 @@ export const createLinkedTrustUtils = (options: LinkedTrustUtilsOptions) => {
       const { data } = await response.json()
 
       if (data?.accessToken && data?.refreshToken) {
-        const authURL = `https://dev.linkedtrust.us/login?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`
+        const baseUrl = process.env.NEXT_PUBLIC_LINKEDTRUST_URL || 'https://linkedtrust.us'
+        const authURL = `${baseUrl}/login?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`
 
         // Create a hidden anchor element to leverage user gesture
         const linkElem = document.createElement('a')
