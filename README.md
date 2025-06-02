@@ -1,3 +1,8 @@
+
+DO NOT EVER MERGE THIS BACK TO LinkedCreds - we need to remove the fork by remove and recreate this repo - 
+
+THIS IS A HARD FORK do NOT every merge it back
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
