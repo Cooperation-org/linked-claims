@@ -15,14 +15,12 @@ export async function GET() {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, email, googleId } = session.user
+    const idToken = session?.idToken as string
 
-    const token = jwt.sign({ name, email, googleId }, secret, {
-      expiresIn: '1m'
-    })
+    const baseUrl = process.env.NEXT_PUBLIC_LINKEDTRUST_API_URL as string
 
-    const { data } = await axios.post('https://dev.linkedtrust.us/auth/google', {
-      token
+    const { data } = await axios.post(`${baseUrl}/auth/google`, {
+      idToken
     })
 
     return NextResponse.json({ data })

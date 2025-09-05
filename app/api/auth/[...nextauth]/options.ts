@@ -7,6 +7,7 @@ declare module 'next-auth' {
   interface Session {
     accessToken?: string
     refreshToken?: string
+    idToken?: string
     expires?: number
     error?: string
     user?: {
@@ -51,6 +52,7 @@ export const authOptions: NextAuthOptions = {
       if (account && user) {
         const accessToken = account.access_token
         const refreshToken = account.refresh_token
+        const idToken = account.id_token
 
         setCookie('accessToken', accessToken as string, { expires: 60 * 60 * 24 * 30 })
         setCookie('refreshToken', refreshToken as string, { expires: 60 * 60 * 24 * 30 })
@@ -58,6 +60,7 @@ export const authOptions: NextAuthOptions = {
         return {
           accessToken,
           refreshToken,
+          idToken,
           expires: Date.now() + (account.expires_in as number) * 1000,
           user: {
             name: user.name,
@@ -80,6 +83,7 @@ export const authOptions: NextAuthOptions = {
       session.expires = token.expires as number
       session.error = token.error as string
       session.user = token.user as Session['user']
+      session.idToken = token.idToken as string
 
       return session
     }
